@@ -136,3 +136,8 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'cautious-unfrosted-identity.ngrok-free.dev'
+]
