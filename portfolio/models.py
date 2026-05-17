@@ -82,3 +82,21 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.transaction_type}"
+
+class Watchlist(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    stock_symbol = models.CharField(
+        max_length=10
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        unique_together = ('user', 'stock_symbol')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.stock_symbol} (Watchlist)"

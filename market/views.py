@@ -52,9 +52,33 @@ class StockChartView(APIView):
                 "today_high": float(today_high) if today_high is not None else None,
                 "today_low": float(today_low) if today_low is not None else None,
                 "volume": int(volume) if volume is not None else None,
-                "52_week_high": float(year_high) if year_high is not None else None,
                 "52_week_low": float(year_low) if year_low is not None else None,
                 "candles": candles
             })
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+class Nifty50ListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # A curated list of popular NIFTY 50 / Indian stocks
+        popular_stocks = [
+            {"symbol": "RELIANCE.NS", "name": "Reliance Industries"},
+            {"symbol": "TCS.NS", "name": "Tata Consultancy Services"},
+            {"symbol": "HDFCBANK.NS", "name": "HDFC Bank"},
+            {"symbol": "INFY.NS", "name": "Infosys"},
+            {"symbol": "ICICIBANK.NS", "name": "ICICI Bank"},
+            {"symbol": "HINDUNILVR.NS", "name": "Hindustan Unilever"},
+            {"symbol": "SBIN.NS", "name": "State Bank of India"},
+            {"symbol": "BHARTIARTL.NS", "name": "Bharti Airtel"},
+            {"symbol": "ITC.NS", "name": "ITC Limited"},
+            {"symbol": "KOTAKBANK.NS", "name": "Kotak Mahindra Bank"},
+            {"symbol": "LT.NS", "name": "Larsen & Toubro"},
+            {"symbol": "AXISBANK.NS", "name": "Axis Bank"},
+            {"symbol": "ASIANPAINT.NS", "name": "Asian Paints"},
+            {"symbol": "MARUTI.NS", "name": "Maruti Suzuki"},
+            {"symbol": "HCLTECH.NS", "name": "HCL Technologies"}
+        ]
+        
+        # We can also fetch live prices for these if we want, but returning just the list is fast
+        return Response(popular_stocks)
