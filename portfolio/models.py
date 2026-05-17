@@ -22,6 +22,16 @@ class Portfolio(models.Model):
         decimal_places=2
     )
 
+    realized_profit = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=0.00
+    )
+
+    last_updated = models.DateTimeField(
+        auto_now=True
+    )
+
     def __str__(self):
         return f"{self.user.username} - {self.stock_symbol}"
 
@@ -52,6 +62,18 @@ class Transaction(models.Model):
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2
+    )
+
+    total_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+
+    status = models.CharField(
+        max_length=20,
+        default='COMPLETED'
     )
 
     created_at = models.DateTimeField(

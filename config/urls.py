@@ -25,6 +25,7 @@ urlpatterns = [
 
     path('api/users/', include('users.urls')),
     path('api/portfolio/', include('portfolio.urls')),
+    path('api/stocks/', include('market.urls')),
 
     path('api/token/', TokenObtainPairView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view()),
