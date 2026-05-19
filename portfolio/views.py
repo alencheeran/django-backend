@@ -8,6 +8,9 @@ from .models import Portfolio, Transaction, Watchlist
 from .serializers import PortfolioSerializer
 from .transaction_serializer import TransactionSerializer
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 
 class PortfolioView(APIView):
 
@@ -26,6 +29,17 @@ class BuyStockView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['stock_symbol', 'quantity', 'price'],
+            properties={
+                'stock_symbol': openapi.Schema(type=openapi.TYPE_STRING, description='Stock symbol'),
+                'quantity': openapi.Schema(type=openapi.TYPE_INTEGER, description='Quantity to buy'),
+                'price': openapi.Schema(type=openapi.TYPE_NUMBER, description='Price per share'),
+            },
+        )
+    )
     def post(self, request):
 
         stock_symbol = request.data.get('stock_symbol')
@@ -220,6 +234,16 @@ class PortfolioSummaryView(APIView):
 class SellStockView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['stock_symbol', 'quantity'],
+            properties={
+                'stock_symbol': openapi.Schema(type=openapi.TYPE_STRING, description='Stock symbol'),
+                'quantity': openapi.Schema(type=openapi.TYPE_INTEGER, description='Quantity to sell'),
+            },
+        )
+    )
     def post(self, request):
         stock_symbol = request.data.get('stock_symbol')
         quantity = int(request.data.get('quantity', 0))
@@ -297,6 +321,15 @@ class TransactionHistoryView(APIView):
 class WatchlistToggleView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['stock_symbol'],
+            properties={
+                'stock_symbol': openapi.Schema(type=openapi.TYPE_STRING, description='Stock symbol'),
+            },
+        )
+    )
     def post(self, request):
         stock_symbol = request.data.get('stock_symbol')
         

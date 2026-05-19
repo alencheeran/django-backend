@@ -3,9 +3,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 class StockChartView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('period', openapi.IN_QUERY, description="Time period (e.g., '1mo', '1y')", type=openapi.TYPE_STRING),
+            openapi.Parameter('interval', openapi.IN_QUERY, description="Data interval (e.g., '1d', '1wk')", type=openapi.TYPE_STRING),
+        ]
+    )
     def get(self, request, symbol):
         period = request.query_params.get('period', '1mo')
         interval = request.query_params.get('interval', '1d')
