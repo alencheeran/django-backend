@@ -1,4 +1,9 @@
 from decimal import Decimal
+from datetime import datetime
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -25,6 +30,26 @@ class PortfolioView(APIView):
         return Response(serializer.data)
 
 
+def is_market_open():
+    """Check if current time is within NSE market hours (Mon-Fri, 9:15 AM - 3:30 PM IST)."""
+    try:
+        tz = ZoneInfo('Asia/Kolkata')
+    except Exception:
+        import pytz
+        tz = pytz.timezone('Asia/Kolkata')
+        
+    now = datetime.now(tz)
+    
+    # 5=Sat, 6=Sun
+    if now.weekday() >= 5:
+        return False
+        
+    market_open = now.replace(hour=9, minute=15, second=0, microsecond=0)
+    market_close = now.replace(hour=15, minute=30, second=0, microsecond=0)
+    
+    return market_open <= now <= market_close
+
+
 class BuyStockView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -41,6 +66,10 @@ class BuyStockView(APIView):
         )
     )
     def post(self, request):
+        if not is_market_open():
+            return Response({
+                "error": "Market is closed. Trading is only allowed Monday to Friday, 9:15 AM - 3:30 PM IST."
+            }, status=400)
 
         stock_symbol = request.data.get('stock_symbol')
         quantity = int(request.data.get('quantity'))
@@ -245,6 +274,11 @@ class SellStockView(APIView):
         )
     )
     def post(self, request):
+        if not is_market_open():
+            return Response({
+                "error": "Market is closed. Trading is only allowed Monday to Friday, 9:15 AM - 3:30 PM IST."
+            }, status=400)
+
         stock_symbol = request.data.get('stock_symbol')
         quantity = int(request.data.get('quantity', 0))
         
@@ -387,3 +421,53 @@ class WatchlistView(APIView):
             })
             
         return Response(results)
+
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class LeaderboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.all()
+        leaderboard = []
+
+        for user in users:
+            portfolios = Portfolio.objects.filter(user=user)
+            available_cash = user.balance
+            total_current_value = Decimal(0)
+
+            for p in portfolios:
+                if p.quantity == 0:
+                    continue
+                symbol = p.stock_symbol
+                ticker_symbol = f"{symbol}.NS" if not symbol.endswith(".NS") else symbol
+                try:
+                    ticker = yf.Ticker(ticker_symbol)
+                    try:
+                        current_price = Decimal(str(ticker.fast_info['lastPrice']))
+                    except Exception:
+                        hist = ticker.history(period="1d")
+                        if not hist.empty:
+                            current_price = Decimal(str(hist['Close'].iloc[-1]))
+                        else:
+                            current_price = p.avg_price
+                except Exception:
+                    current_price = p.avg_price
+                
+                total_current_value += (p.quantity * current_price)
+
+            total_portfolio_value = available_cash + total_current_value
+            initial_balance = user.initial_balance
+            total_return = total_portfolio_value - initial_balance
+            total_return_percentage = (total_return / initial_balance * 100) if initial_balance > 0 else Decimal(0)
+
+            leaderboard.append({
+                "username": user.username,
+                "total_portfolio_value": float(total_portfolio_value),
+                "total_return_percentage": float(total_return_percentage)
+            })
+
+        # Sort by total_portfolio_value descending
+        leaderboard.sort(key=lambda x: x['total_portfolio_value'], reverse=True)
+        return Response(leaderboard)
