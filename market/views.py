@@ -89,5 +89,73 @@ class Nifty50ListView(APIView):
             {"symbol": "HCLTECH.NS", "name": "HCL Technologies"}
         ]
         
-        # We can also fetch live prices for these if we want, but returning just the list is fast
+        symbols = [stock["symbol"] for stock in popular_stocks]
+        
+        try:
+            # Fetch 2 days of daily data in bulk to calculate current price and change
+            data = yf.download(symbols, period="2d", interval="1d", group_by="ticker", progress=False)
+            
+            # Since we download multiple symbols, data columns will be a MultiIndex
+            has_multiindex = hasattr(data.columns, 'levels')
+            
+            for stock in popular_stocks:
+                symbol = stock["symbol"]
+                
+                # Check if symbol is present in downloaded data
+                if (has_multiindex and symbol in data.columns.levels[0]) or (not has_multiindex and symbol in data.columns):
+                    ticker_df = data[symbol]
+                    valid_df = ticker_df.dropna(subset=['Close'])
+                    
+                    if not valid_df.empty:
+                        current_price = valid_df['Close'].iloc[-1]
+                        today_high = valid_df['High'].iloc[-1]
+                        today_low = valid_df['Low'].iloc[-1]
+                        volume = valid_df['Volume'].iloc[-1]
+                        
+                        if len(valid_df) >= 2:
+                            prev_close = valid_df['Close'].iloc[-2]
+                        else:
+                            prev_close = current_price
+                            
+                        change = current_price - prev_close
+                        change_pct = (change / prev_close * 100) if prev_close > 0 else 0
+                        
+                        stock.update({
+                            "current_price": float(current_price),
+                            "change": float(change),
+                            "change_percentage": float(change_pct),
+                            "high": float(today_high),
+                            "low": float(today_low),
+                            "volume": int(volume)
+                        })
+                    else:
+                        stock.update({
+                            "current_price": None,
+                            "change": None,
+                            "change_percentage": None,
+                            "high": None,
+                            "low": None,
+                            "volume": None
+                        })
+                else:
+                    stock.update({
+                        "current_price": None,
+                        "change": None,
+                        "change_percentage": None,
+                        "high": None,
+                        "low": None,
+                        "volume": None
+                    })
+        except Exception:
+            # Gracefully fail and default fields to None if bulk download fails
+            for stock in popular_stocks:
+                stock.update({
+                    "current_price": None,
+                    "change": None,
+                    "change_percentage": None,
+                    "high": None,
+                    "low": None,
+                    "volume": None
+                })
+        
         return Response(popular_stocks)
