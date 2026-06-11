@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApexTrade | Premium Real-Time Trading Platform</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- ApexCharts CDN for advanced charts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark-theme">
+    <!-- Full-screen Auth Overlay -->
+    <div id="auth-container" class="auth-overlay">
+        <div class="auth-card glass-panel">
+            <div class="auth-header">
+                <div class="logo">
+                    <i data-lucide="trending-up" class="logo-icon"></i>
+                    <span>Apex<span>Trade</span></span>
+                </div>
+                <p id="auth-subtitle">Sign in to access your virtual trading dashboard</p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="login-username" placeholder="Enter your username" required autocomplete="username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>Sign In</span>
+                    <i data-lucide="arrow-right"></i>
+                </button>
+                <p class="auth-switch">Don't have an account? <a href="#" id="show-register">Register here</a></p>
+            </form>
+
+            <!-- Register Form (Hidden initially) -->
+            <form id="register-form" class="auth-form hidden">
+                <div class="form-group">
+                    <label for="reg-username">Username</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="reg-username" placeholder="Choose a username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="mail"></i>
+                        <input type="email" id="reg-email" placeholder="Enter your email" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock"></i>
+                        <input type="password" id="reg-password" placeholder="Create a strong password" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span>Create Account</span>
+                    <i data-lucide="user-plus"></i>
+                </button>
+                <p class="auth-switch">Already have an account? <a href="#" id="show-login">Login here</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Platform Layout (Hidden until authenticated) -->
+    <div id="app-container" class="app-layout hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-brand">
+                <div class="logo">
+                    <i data-lucide="trending-up" class="logo-icon"></i>
+                    <span>Apex<span>Trade</span></span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="#/dashboard" class="nav-link active" id="nav-dashboard">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#/trade" class="nav-link" id="nav-trade">
+                            <i data-lucide="line-chart"></i>
+                            <span>Trade Room</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#/watchlist" class="nav-link" id="nav-watchlist">
+                            <i data-lucide="star"></i>
+                            <span>Watchlist</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#/holdings" class="nav-link" id="nav-holdings">
+                            <i data-lucide="briefcase"></i>
+                            <span>My Holdings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#/history" class="nav-link" id="nav-history">
+                            <i data-lucide="history"></i>
+                            <span>Transactions</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#/leaderboard" class="nav-link" id="nav-leaderboard">
+                            <i data-lucide="trophy"></i>
+                            <span>Leaderboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-separator"></li>
+                    <li>
+                        <a href="#/settings" class="nav-link" id="nav-settings">
+                            <i data-lucide="settings"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar" id="user-avatar-initial">U</div>
+                    <div class="user-info">
+                        <span class="username" id="display-username">Username</span>
+                        <span class="user-role">Retail Trader</span>
+                    </div>
+                </div>
+                <button id="btn-logout" class="btn btn-logout" title="Log Out">
+                    <i data-lucide="log-out"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="header glass-panel">
+                <div class="header-left">
+                    <h1 id="page-title">Dashboard</h1>
+                    <span id="market-status" class="market-badge closed">
+                        <span class="dot"></span>
+                        <span class="text">Market Hours: 9:15 AM - 3:30 PM IST (Mon-Fri)</span>
+                    </span>
+                </div>
+                
+                <div class="header-right">
+                    <!-- Virtual Capital Display -->
+                    <div class="capital-display glass-panel">
+                        <div class="capital-item">
+                            <span class="capital-label">Total Portfolio</span>
+                            <span class="capital-value" id="header-portfolio-value">₹1,00,000.00</span>
+                        </div>
+                        <div class="capital-divider"></div>
+                        <div class="capital-item">
+                            <span class="capital-label">Available Cash</span>
+                            <span class="capital-value" id="header-cash-value">₹1,00,000.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Connection indicator -->
+                    <div id="conn-indicator" class="connection-indicator connected" title="Connected to WebSocket">
+                        <i data-lucide="wifi"></i>
+                        <span>Live Stream</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Pages Containers -->
+            <div class="content-body">
+                
+                <!-- 1. DASHBOARD VIEW -->
+                <section id="view-dashboard" class="view-section">
+                    <!-- Portfolio Metrics Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Portfolio Value</span>
+                                <i data-lucide="pie-chart" class="text-primary"></i>
+                            </div>
+                            <div class="metric-value" id="card-portfolio-value">₹1,00,000.00</div>
+                            <div class="metric-sub" id="card-total-return-container">
+                                <span class="trend-icon-wrapper positive"><i data-lucide="arrow-up-right"></i></span>
+                                <span class="trend-value positive" id="card-total-return">₹0.00 (0.00%)</span>
+                                <span class="trend-label">All-time return</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Available Capital</span>
+                                <i data-lucide="wallet" class="text-success"></i>
+                            </div>
+                            <div class="metric-value" id="card-cash-value">₹1,00,000.00</div>
+                            <div class="metric-sub">
+                                <span class="trend-label">Ready to deploy in equities</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Invested Amount</span>
+                                <i data-lucide="credit-card" class="text-indigo"></i>
+                            </div>
+                            <div class="metric-value" id="card-invested-value">₹0.00</div>
+                            <div class="metric-sub">
+                                <span class="trend-label">Active equity positions</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Daily Performance</span>
+                                <i data-lucide="activity" class="text-warning"></i>
+                            </div>
+                            <div class="metric-value" id="card-day-return-val">₹0.00</div>
+                            <div class="metric-sub" id="card-day-return-container">
+                                <span class="trend-icon-wrapper neutral"><i data-lucide="minus"></i></span>
+                                <span class="trend-value neutral" id="card-day-return-pct">0.00%</span>
+                                <span class="trend-label">Today's P&L</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Market Overview & Watchlist split -->
+                    <div class="dashboard-split">
+                        <!-- Nifty 50 Stocks Table -->
+                        <div class="table-container glass-panel flex-2">
+                            <div class="container-header">
+                                <h2>Nifty 50 Indices <span class="subtitle">(Pulsing green/red are live mock feeds)</span></h2>
+                                <button id="btn-refresh-nifty" class="btn btn-icon-text">
+                                    <i data-lucide="refresh-cw"></i>
+                                    <span>Refresh Data</span>
+                                </button>
+                            </div>
+                            <div class="table-wrapper">
+                                <table class="stock-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticker</th>
+                                            <th>Company Name</th>
+                                            <th class="text-right">Live Price</th>
+                                            <th class="text-right">Change</th>
+                                            <th class="text-right">Change %</th>
+                                            <th class="text-right">Today's High</th>
+                                            <th class="text-right">Today's Low</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="nifty50-list-body">
+                                        <tr>
+                                            <td colspan="8" class="text-center">
+                                                <div class="loading-state">
+                                                    <div class="spinner"></div>
+                                                    <span>Loading Nifty 50 constituents...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar Watchlist Quick View -->
+                        <div class="table-container glass-panel flex-1">
+                            <div class="container-header">
+                                <h2>Watchlist</h2>
+                                <a href="#/watchlist" class="btn-link">View All</a>
+                            </div>
+                            <div class="watchlist-sidebar-list" id="watchlist-sidebar-body">
+                                <div class="empty-state">
+                                    <i data-lucide="star"></i>
+                                    <p>Your watchlist is empty</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. TRADE ROOM VIEW -->
+                <section id="view-trade" class="view-section hidden">
+                    <div class="trade-grid">
+                        <!-- Chart & Stock Info -->
+                        <div class="chart-container glass-panel">
+                            <div class="chart-header">
+                                <div class="stock-active-info">
+                                    <div class="title-row">
+                                        <h2 id="trade-stock-symbol">RELIANCE.NS</h2>
+                                        <button id="trade-watchlist-btn" class="btn-watchlist-toggle" title="Add to Watchlist">
+                                            <i data-lucide="star"></i>
+                                        </button>
+                                    </div>
+                                    <p id="trade-stock-name" class="stock-name">Reliance Industries</p>
+                                    <div class="price-row">
+                                        <span id="trade-stock-price" class="stock-price">₹2,450.00</span>
+                                        <span id="trade-stock-change" class="stock-change positive">+24.50 (+1.01%)</span>
+                                    </div>
+                                </div>
+                                <div class="chart-selectors">
+                                    <div class="btn-group period-group">
+                                        <button class="btn btn-selector active" data-period="1mo" data-interval="1d">1M</button>
+                                        <button class="btn btn-selector" data-period="3mo" data-interval="1d">3M</button>
+                                        <button class="btn btn-selector" data-period="6mo" data-interval="1d">6M</button>
+                                        <button class="btn btn-selector" data-period="1y" data-interval="1d">1Y</button>
+                                        <button class="btn btn-selector" data-period="5y" data-interval="1wk">5Y</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Historical Candlestick Chart -->
+                            <div class="chart-body">
+                                <div id="chart-loader" class="loading-state">
+                                    <div class="spinner"></div>
+                                    <span>Fetching chart history...</span>
+                                </div>
+                                <div id="stock-candlestick-chart"></div>
+                            </div>
+
+                            <!-- Additional statistics -->
+                            <div class="stats-grid">
+                                <div class="stat-box">
+                                    <span class="stat-label">Today's High</span>
+                                    <span class="stat-value" id="trade-stat-high">₹2,475.00</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Today's Low</span>
+                                    <span class="stat-value" id="trade-stat-low">₹2,410.00</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">52-Week Low</span>
+                                    <span class="stat-value" id="trade-stat-52w-low">₹1,950.00</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Volume</span>
+                                    <span class="stat-value" id="trade-stat-volume">1,245,600</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Execution Panel -->
+                        <div class="order-execution-panel glass-panel">
+                            <div class="tabs-header">
+                                <button id="tab-buy" class="tab-btn active">Buy Order</button>
+                                <button id="tab-sell" class="tab-btn">Sell Order</button>
+                            </div>
+                            
+                            <div class="tab-content">
+                                <!-- Warning banner if market hours validation fails -->
+                                <div class="market-warning-banner hidden" id="order-market-warning">
+                                    <i data-lucide="alert-triangle"></i>
+                                    <span>Virtual market validation is strictly active during standard NSE market hours.</span>
+                                </div>
+
+                                <!-- BUY FORM -->
+                                <form id="order-buy-form">
+                                    <div class="form-group">
+                                        <label>Transaction Type</label>
+                                        <div class="badge-type buy">EQUITY BUY</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="buy-quantity">Shares Quantity</label>
+                                        <input type="number" id="buy-quantity" min="1" step="1" value="5" required>
+                                        <span class="form-helper" id="helper-shares-held">You currently hold: <span id="buy-shares-held">0</span> shares</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Execution Price (Market Rate)</label>
+                                        <div class="input-wrapper disabled">
+                                            <span class="currency">₹</span>
+                                            <input type="text" id="buy-display-price" readonly value="2,450.00">
+                                        </div>
+                                        <span class="form-helper text-warning">Dynamic live execution rate applies</span>
+                                    </div>
+                                    <div class="cost-summary">
+                                        <div class="summary-row">
+                                            <span>Subtotal</span>
+                                            <span id="buy-subtotal">₹12,250.00</span>
+                                        </div>
+                                        <div class="summary-row">
+                                            <span>Available Cash</span>
+                                            <span id="buy-available-cash">₹1,00,000.00</span>
+                                        </div>
+                                        <div class="summary-row total">
+                                            <span>Estimated Total Cost</span>
+                                            <span id="buy-total">₹12,250.00</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-buy btn-block" id="btn-execute-buy">
+                                        Execute BUY Order
+                                    </button>
+                                </form>
+
+                                <!-- SELL FORM (Hidden initially) -->
+                                <form id="order-sell-form" class="hidden">
+                                    <div class="form-group">
+                                        <label>Transaction Type</label>
+                                        <div class="badge-type sell">EQUITY SELL</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sell-quantity">Shares Quantity</label>
+                                        <input type="number" id="sell-quantity" min="1" step="1" value="0" required>
+                                        <span class="form-helper" id="helper-sell-shares-held">Maximum available to sell: <span id="sell-shares-held">0</span> shares</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Execution Price (Market Rate)</label>
+                                        <div class="input-wrapper disabled">
+                                            <span class="currency">₹</span>
+                                            <input type="text" id="sell-display-price" readonly value="2,450.00">
+                                        </div>
+                                    </div>
+                                    <div class="cost-summary">
+                                        <div class="summary-row">
+                                            <span>Average Buy Price</span>
+                                            <span id="sell-avg-buy-price">₹0.00</span>
+                                        </div>
+                                        <div class="summary-row">
+                                            <span>Estimated Credit Value</span>
+                                            <span id="sell-total-credit">₹0.00</span>
+                                        </div>
+                                        <div class="summary-row total-profit">
+                                            <span>Est. Return on Sale</span>
+                                            <span id="sell-est-profit">₹0.00 (0.00%)</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-sell btn-block" id="btn-execute-sell">
+                                        Execute SELL Order
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. WATCHLIST VIEW -->
+                <section id="view-watchlist" class="view-section hidden">
+                    <div class="table-container glass-panel">
+                        <div class="container-header">
+                            <h2>My Watchlist</h2>
+                            <p class="subtitle">Quick access to monitoring stocks of interest</p>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticker</th>
+                                        <th>Live Price</th>
+                                        <th class="text-right">Change</th>
+                                        <th class="text-right">Change %</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="watchlist-list-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="empty-state">
+                                                <i data-lucide="star"></i>
+                                                <p>Your watchlist is empty. Add stocks from the dashboard list.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. HOLDINGS VIEW -->
+                <section id="view-holdings" class="view-section hidden">
+                    <!-- Holdings Statistics Overview -->
+                    <div class="metrics-grid custom-metrics-3">
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Total Current Value</span>
+                                <i data-lucide="trending-up" class="text-primary"></i>
+                            </div>
+                            <div class="metric-value" id="holdings-current-val">₹0.00</div>
+                            <div class="metric-sub">
+                                <span class="trend-label">Market valuation of holdings</span>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Invested Capital</span>
+                                <i data-lucide="piggy-bank" class="text-indigo"></i>
+                            </div>
+                            <div class="metric-value" id="holdings-invested-val">₹0.00</div>
+                            <div class="metric-sub">
+                                <span class="trend-label">Net cost of active holdings</span>
+                            </div>
+                        </div>
+                        <div class="metric-card glass-panel">
+                            <div class="metric-header">
+                                <span>Unrealized Gain / Loss</span>
+                                <i data-lucide="percent" class="text-success"></i>
+                            </div>
+                            <div class="metric-value" id="holdings-profit-val">₹0.00</div>
+                            <div class="metric-sub" id="holdings-profit-pct-container">
+                                <span class="trend-icon-wrapper neutral"><i data-lucide="minus"></i></span>
+                                <span class="trend-value neutral" id="holdings-profit-pct">0.00%</span>
+                                <span class="trend-label">Return percentage</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Holdings Table -->
+                    <div class="table-container glass-panel">
+                        <div class="container-header">
+                            <h2>Equities Portfolio</h2>
+                            <p class="subtitle">Open positions and dynamic returns</p>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th class="text-right">Shares Held</th>
+                                        <th class="text-right">Avg. Buy Price</th>
+                                        <th class="text-right">Live Price</th>
+                                        <th class="text-right">Total Invested</th>
+                                        <th class="text-right">Current Value</th>
+                                        <th class="text-right">Profit / Loss</th>
+                                        <th class="text-right">P&L %</th>
+                                        <th class="text-center">Quick Trade</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="holdings-list-body">
+                                    <tr>
+                                        <td colspan="9" class="text-center">
+                                            <div class="empty-state">
+                                                <i data-lucide="briefcase"></i>
+                                                <p>You have no active holdings. Go to Trade Room to buy shares.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. TRANSACTION HISTORY VIEW -->
+                <section id="view-history" class="view-section hidden">
+                    <div class="table-container glass-panel">
+                        <div class="container-header">
+                            <h2>Transactions Log</h2>
+                            <p class="subtitle">Chronological ledger of executed equity trades</p>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Stock Symbol</th>
+                                        <th>Type</th>
+                                        <th class="text-right">Shares Quantity</th>
+                                        <th class="text-right">Execution Price</th>
+                                        <th class="text-right">Total Value</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-list-body">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <div class="empty-state">
+                                                <i data-lucide="history"></i>
+                                                <p>No transactions found</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. LEADERBOARD VIEW -->
+                <section id="view-leaderboard" class="view-section hidden">
+                    <div class="leaderboard-container">
+                        <!-- Top 3 podium styling -->
+                        <div class="podium-row" id="podium-container">
+                            <div class="podium-place second">
+                                <div class="trophy-badge silver"><i data-lucide="award"></i></div>
+                                <div class="podium-user" id="podium-2-user">-</div>
+                                <div class="podium-val" id="podium-2-value">₹0.00</div>
+                                <div class="podium-return" id="podium-2-return">0.00%</div>
+                                <div class="podium-step">2nd Place</div>
+                            </div>
+                            <div class="podium-place first">
+                                <div class="trophy-badge gold"><i data-lucide="trophy"></i></div>
+                                <div class="podium-user" id="podium-1-user">-</div>
+                                <div class="podium-val" id="podium-1-value">₹0.00</div>
+                                <div class="podium-return" id="podium-1-return">0.00%</div>
+                                <div class="podium-step">1st Place</div>
+                            </div>
+                            <div class="podium-place third">
+                                <div class="trophy-badge bronze"><i data-lucide="award"></i></div>
+                                <div class="podium-user" id="podium-3-user">-</div>
+                                <div class="podium-val" id="podium-3-value">₹0.00</div>
+                                <div class="podium-return" id="podium-3-return">0.00%</div>
+                                <div class="podium-step">3rd Place</div>
+                            </div>
+                        </div>
+
+                        <!-- Leaderboard rankings table -->
+                        <div class="table-container glass-panel">
+                            <div class="container-header">
+                                <h2>Rankings Directory</h2>
+                                <p class="subtitle">Sorted by Net Portfolio Value (Cash + Equities Valuation)</p>
+                            </div>
+                            <div class="table-wrapper">
+                                <table class="stock-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center" style="width: 80px;">Rank</th>
+                                            <th>Trader Username</th>
+                                            <th class="text-right">Total Net Worth</th>
+                                            <th class="text-right">Total Returns %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leaderboard-list-body">
+                                        <tr>
+                                            <td colspan="4" class="text-center">
+                                                <div class="loading-state">
+                                                    <div class="spinner"></div>
+                                                    <span>Compiling leaderboards...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. SETTINGS VIEW -->
+                <section id="view-settings" class="view-section hidden">
+                    <div class="settings-grid">
+                        <div class="settings-card glass-panel">
+                            <div class="card-header">
+                                <i data-lucide="server" class="text-primary"></i>
+                                <h3>Backend Configuration</h3>
+                            </div>
+                            <div class="card-body">
+                                <p class="settings-info">Configure API and WebSocket connections for the client here. Updates will save locally in your browser.</p>
+                                <div class="form-group">
+                                    <label for="settings-api-url">API Base Server URL</label>
+                                    <input type="url" id="settings-api-url" placeholder="http://127.0.0.1:8000">
+                                    <span class="form-helper">REST endpoints root (e.g. registration, holdings, charts)</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="settings-ws-url">WebSocket URL</label>
+                                    <input type="url" id="settings-ws-url" placeholder="ws://127.0.0.1:8000">
+                                    <span class="form-helper">Real-time WebSocket protocol root for streaming prices</span>
+                                </div>
+                                <div class="btn-actions-row">
+                                    <button id="btn-save-settings" class="btn btn-primary">
+                                        <i data-lucide="save"></i>
+                                        <span>Save Configuration</span>
+                                    </button>
+                                    <button id="btn-reset-settings" class="btn btn-secondary">
+                                        <span>Reset to Defaults</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-card glass-panel">
+                            <div class="card-header">
+                                <i data-lucide="terminal" class="text-indigo"></i>
+                                <h3>Platform Info</h3>
+                            </div>
+                            <div class="card-body platform-info">
+                                <div class="info-row">
+                                    <span class="info-label">Active Connection Port</span>
+                                    <span class="info-value" id="settings-info-port">Connecting...</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Authentication Token Status</span>
+                                    <span class="info-value" id="settings-info-auth">Session Expired</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Engine Framework</span>
+                                    <span class="info-value">Vanilla JS SPA (ES6+)</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Chart Provider</span>
+                                    <span class="info-value">ApexCharts V3</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Market Clock Integration</span>
+                                    <span class="info-value">Asia/Kolkata (IST)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Alert / Toast Notification Center -->
+    <div id="toast-container" class="toast-wrapper"></div>
+
+    <!-- Core Logic Client Application -->
+    <script src="app.js" type="module"></script>
+</body>
+</html>
