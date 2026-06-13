@@ -34,31 +34,43 @@ class ApexTradeApp extends ConsumerWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF6366F1),
-          secondary: Color(0xFF10B981),
-          surface: Color(0xFF1E293B),
-          error: Color(0xFFEF4444),
+          primary: Color(0xFF6366F1), // Electric Indigo
+          secondary: Color(0xFF10B981), // Emerald Green
+          surface: Color(0xFF131B2E), // Deep slate card/surface
+          error: Color(0xFFF43F5E), // Rose red
           onPrimary: Colors.white,
           onSecondary: Colors.white,
-          onSurface: Colors.white,
+          onSurface: Color(0xFFF8FAFC), // Off-white text
         ),
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        scaffoldBackgroundColor: const Color(0xFF0B0F1E),
+        dividerColor: const Color(0xFF1E293B),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B),
-          foregroundColor: Colors.white,
+          backgroundColor: Color(0xFF131B2E),
+          foregroundColor: Color(0xFFF8FAFC),
           elevation: 0,
         ),
         cardTheme: CardThemeData(
-          color: const Color(0xFF1E293B),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: const Color(0xFF131B2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF1E293B)),
+          ),
         ),
         inputDecorationTheme: const InputDecorationTheme(
-          labelStyle: TextStyle(color: Color(0xFF94A3B8)),
+          labelStyle: TextStyle(color: Color(0xFF64748B)),
           floatingLabelStyle: TextStyle(color: Color(0xFF6366F1)),
           prefixIconColor: Color(0xFF6366F1),
-          suffixIconColor: Color(0xFF94A3B8),
-          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
+          suffixIconColor: Color(0xFF64748B),
+          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF1E293B))),
           focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6366F1),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
       ),
       home: authState.status == AuthStatus.authenticated

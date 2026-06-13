@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart';
 
 class AuthView extends ConsumerStatefulWidget {
   const AuthView({super.key});
@@ -50,12 +51,76 @@ class _AuthViewState extends ConsumerState<AuthView> {
     }
   }
 
+  void _showSettingsDialog(BuildContext context) {
+    final settings = ref.read(settingsProvider);
+    final apiController = TextEditingController(text: settings.apiUrl);
+    final wsController = TextEditingController(text: settings.wsUrl);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF131B2E),
+          title: const Text('Server Connection Settings', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: apiController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'API URL',
+                  labelStyle: TextStyle(color: Color(0xFF64748B)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: wsController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'WebSocket URL',
+                  labelStyle: TextStyle(color: Color(0xFF64748B)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await ref.read(settingsProvider.notifier).updateSettings(
+                  apiUrl: apiController.text.trim(),
+                  wsUrl: wsController.text.trim(),
+                );
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Save', style: TextStyle(color: Color(0xFF10B981))),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color(0xFF64748B)),
+            onPressed: () => _showSettingsDialog(context),
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
@@ -64,12 +129,12 @@ class _AuthViewState extends ConsumerState<AuthView> {
               constraints: const BoxConstraints(maxWidth: 400),
               padding: const EdgeInsets.all(32.0),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
+                border: Border.all(color: Theme.of(context).dividerColor),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 10),
                   ),
@@ -85,16 +150,16 @@ class _AuthViewState extends ConsumerState<AuthView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.trending_up,
-                          color: Color(0xFF6366F1),
+                          color: Theme.of(context).colorScheme.primary,
                           size: 36,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'ApexTrade',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
                               ),
@@ -105,7 +170,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
                     Text(
                       _isLogin ? 'Sign in to access your trading desk' : 'Create a new virtual trading account',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
                     ),
                     const SizedBox(height: 24),
 
@@ -114,13 +179,13 @@ class _AuthViewState extends ConsumerState<AuthView> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withOpacity(0.15),
+                          color: const Color(0xFFEF4444).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
+                          border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
                         ),
                         child: Text(
                           authState.errorMessage!,
-                          style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 13),
+                          style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -129,13 +194,13 @@ class _AuthViewState extends ConsumerState<AuthView> {
                     // Username Input
                     TextFormField(
                       controller: _usernameController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      decoration: InputDecoration(
                         labelText: 'Username',
-                        labelStyle: TextStyle(color: Color(0xFF94A3B8)),
-                        prefixIcon: Icon(Icons.person, color: Color(0xFF6366F1)),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+                        labelStyle: const TextStyle(color: Color(0xFF64748B)),
+                        prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                       ),
                       validator: (val) => val == null || val.trim().length < 3 ? 'Username too short' : null,
                     ),
@@ -145,13 +210,13 @@ class _AuthViewState extends ConsumerState<AuthView> {
                     if (!_isLogin) ...[
                       TextFormField(
                         controller: _emailController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
                           labelText: 'Email Address',
-                          labelStyle: TextStyle(color: Color(0xFF94A3B8)),
-                          prefixIcon: Icon(Icons.mail, color: Color(0xFF6366F1)),
-                          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+                          labelStyle: const TextStyle(color: Color(0xFF64748B)),
+                          prefixIcon: Icon(Icons.mail, color: Theme.of(context).colorScheme.primary),
+                          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                         ),
                         validator: (val) => val == null || !val.contains('@') ? 'Enter a valid email address' : null,
                       ),
@@ -162,17 +227,17 @@ class _AuthViewState extends ConsumerState<AuthView> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.lock, color: Color(0xFF6366F1)),
+                        labelStyle: const TextStyle(color: Color(0xFF64748B)),
+                        prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.primary),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF94A3B8)),
+                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF64748B)),
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
-                        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                       ),
                       validator: (val) => val == null || val.trim().length < 6 ? 'Password must be 6+ chars' : null,
                     ),
@@ -182,13 +247,13 @@ class _AuthViewState extends ConsumerState<AuthView> {
                     ElevatedButton(
                       onPressed: authState.status == AuthStatus.authenticating ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: Theme.of(context).colorScheme.secondary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        elevation: 4,
+                        elevation: 0,
                       ),
                       child: authState.status == AuthStatus.authenticating
                           ? const SizedBox(
@@ -211,7 +276,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
                       }),
                       child: Text(
                         _isLogin ? "Don't have an account? Register" : "Already have an account? Login",
-                        style: const TextStyle(color: Color(0xFF6366F1)),
+                        style: TextStyle(color: Theme.of(context).colorScheme.primary),
                       ),
                     ),
                   ],

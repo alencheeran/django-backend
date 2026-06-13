@@ -4,6 +4,20 @@ import '../models/holding.dart';
 import '../models/transaction.dart';
 import 'api_client.dart';
 
+class PortfolioHistoryModel {
+  final String date;
+  final double netWorth;
+
+  PortfolioHistoryModel({required this.date, required this.netWorth});
+
+  factory PortfolioHistoryModel.fromJson(Map<String, dynamic> json) {
+    return PortfolioHistoryModel(
+      date: json['date'].toString(),
+      netWorth: double.tryParse(json['net_worth'].toString()) ?? 0.0,
+    );
+  }
+}
+
 class PortfolioState {
   final double totalPortfolioValue;
   final double availableCash;
@@ -14,6 +28,7 @@ class PortfolioState {
   final double totalReturnPercentage;
   final List<HoldingModel> holdings;
   final List<TransactionModel> transactions;
+  final List<PortfolioHistoryModel> history;
   final bool isLoading;
   final String? error;
 
@@ -27,6 +42,7 @@ class PortfolioState {
     required this.totalReturnPercentage,
     required this.holdings,
     required this.transactions,
+    required this.history,
     required this.isLoading,
     this.error,
   });
@@ -41,6 +57,7 @@ class PortfolioState {
         totalReturnPercentage = 0.0,
         holdings = [],
         transactions = [],
+        history = [],
         isLoading = false,
         error = null;
 
@@ -54,6 +71,7 @@ class PortfolioState {
     double? totalReturnPercentage,
     List<HoldingModel>? holdings,
     List<TransactionModel>? transactions,
+    List<PortfolioHistoryModel>? history,
     bool? isLoading,
     String? error,
   }) {
@@ -67,6 +85,7 @@ class PortfolioState {
       totalReturnPercentage: totalReturnPercentage ?? this.totalReturnPercentage,
       holdings: holdings ?? this.holdings,
       transactions: transactions ?? this.transactions,
+      history: history ?? this.history,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -86,14 +105,20 @@ class PortfolioNotifier extends StateNotifier<PortfolioState> {
       final summaryRes = await client.request('/api/portfolio/summary/', method: 'GET');
       final holdingsRes = await client.request('/api/portfolio/holdings/', method: 'GET');
       final txRes = await client.request('/api/portfolio/transactions/', method: 'GET');
+      final historyRes = await client.request('/api/portfolio/history/', method: 'GET');
 
-      if (summaryRes.statusCode == 200 && holdingsRes.statusCode == 200 && txRes.statusCode == 200) {
+      if (summaryRes.statusCode == 200 &&
+          holdingsRes.statusCode == 200 &&
+          txRes.statusCode == 200 &&
+          historyRes.statusCode == 200) {
         final summary = jsonDecode(summaryRes.body);
         final List<dynamic> holdingsJson = jsonDecode(holdingsRes.body);
         final List<dynamic> txJson = jsonDecode(txRes.body);
+        final List<dynamic> historyJson = jsonDecode(historyRes.body);
 
         final holdings = holdingsJson.map((x) => HoldingModel.fromJson(x)).toList();
         final transactions = txJson.map((x) => TransactionModel.fromJson(x)).toList();
+        final history = historyJson.map((x) => PortfolioHistoryModel.fromJson(x)).toList();
 
         state = PortfolioState(
           totalPortfolioValue: double.tryParse(summary['total_portfolio_value'].toString()) ?? 100000.0,
@@ -105,6 +130,7 @@ class PortfolioNotifier extends StateNotifier<PortfolioState> {
           totalReturnPercentage: double.tryParse(summary['total_return_percentage'].toString()) ?? 0.0,
           holdings: holdings,
           transactions: transactions,
+          history: history,
           isLoading: false,
         );
       } else {
@@ -167,6 +193,54 @@ class PortfolioNotifier extends StateNotifier<PortfolioState> {
       }
     } catch (e) {
       return 'Network connection failed during trade execution.';
+    }
+  }
+
+  Future<String?> depositCash(double amount, String bankName) async {
+    final client = _ref.read(apiClientProvider);
+    try {
+      final response = await client.request(
+        '/api/portfolio/deposit/',
+        method: 'POST',
+        body: {
+          'amount': amount,
+          'bank_name': bankName,
+        },
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchPortfolioData();
+        return null; // Success
+      } else {
+        return data['error'] ?? data['detail'] ?? 'Failed to execute Deposit.';
+      }
+    } catch (e) {
+      return 'Network connection failed during deposit execution.';
+    }
+  }
+
+  Future<String?> withdrawCash(double amount, String bankName) async {
+    final client = _ref.read(apiClientProvider);
+    try {
+      final response = await client.request(
+        '/api/portfolio/withdraw/',
+        method: 'POST',
+        body: {
+          'amount': amount,
+          'bank_name': bankName,
+        },
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchPortfolioData();
+        return null; // Success
+      } else {
+        return data['error'] ?? data['detail'] ?? 'Failed to execute Withdrawal.';
+      }
+    } catch (e) {
+      return 'Network connection failed during withdrawal execution.';
     }
   }
 }

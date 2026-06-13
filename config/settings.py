@@ -138,7 +138,8 @@ REST_FRAMEWORK = {
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    'cautious-unfrosted-identity.ngrok-free.dev'
+    'cautious-unfrosted-identity.ngrok-free.dev',
+    '*'
 ]
 
 SWAGGER_SETTINGS = {

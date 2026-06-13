@@ -77,50 +77,50 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             Text(
               'Backend Settings',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Configure host connections for the trading core server.',
-              style: TextStyle(color: Color(0xFF94A3B8)),
+              style: TextStyle(color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 32),
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF334155)),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TextFormField(
                     controller: _apiUrlController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                    decoration: InputDecoration(
                       labelText: 'API Base Server URL',
-                      labelStyle: TextStyle(color: Color(0xFF94A3B8)),
+                      labelStyle: const TextStyle(color: Color(0xFF64748B)),
                       helperText: 'REST server URL endpoint (e.g. login, orders, holdings)',
-                      helperStyle: TextStyle(color: Color(0xFF64748B)),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+                      helperStyle: const TextStyle(color: Color(0xFF64748B)),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                     ),
                     validator: (val) => val == null || val.trim().isEmpty ? 'URL is required' : null,
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _wsUrlController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                    decoration: InputDecoration(
                       labelText: 'WebSocket URL',
-                      labelStyle: TextStyle(color: Color(0xFF94A3B8)),
+                      labelStyle: const TextStyle(color: Color(0xFF64748B)),
                       helperText: 'WS protocol server endpoint (e.g. ws://localhost:8000)',
-                      helperStyle: TextStyle(color: Color(0xFF64748B)),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+                      helperStyle: const TextStyle(color: Color(0xFF64748B)),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                     ),
                     validator: (val) => val == null || val.trim().isEmpty ? 'URL is required' : null,
                   ),
@@ -133,9 +133,10 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           icon: const Icon(Icons.save),
                           label: const Text('Save Changes'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6366F1),
+                            backgroundColor: Theme.of(context).colorScheme.secondary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
+                            elevation: 0,
                           ),
                         ),
                       ),
@@ -143,8 +144,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                       OutlinedButton(
                         onPressed: _reset,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF94A3B8),
-                          side: const BorderSide(color: Color(0xFF334155)),
+                          foregroundColor: const Color(0xFF64748B),
+                          side: BorderSide(color: Theme.of(context).dividerColor),
                           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                         ),
                         child: const Text('Reset Defaults'),

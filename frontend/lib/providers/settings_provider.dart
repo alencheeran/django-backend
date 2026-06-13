@@ -20,8 +20,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   SettingsNotifier(this._prefs)
       : super(SettingsState(
-          apiUrl: _prefs.getString('api_url') ?? 'http://127.0.0.1:8000',
-          wsUrl: _prefs.getString('ws_url') ?? 'ws://127.0.0.1:8000',
+          apiUrl: _prefs.getString('api_url') ?? 'http://192.168.29.48:8000',
+          wsUrl: _prefs.getString('ws_url') ?? 'ws://192.168.29.48:8000',
         ));
 
   Future<void> updateSettings({required String apiUrl, required String wsUrl}) async {

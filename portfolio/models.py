@@ -41,6 +41,8 @@ class Transaction(models.Model):
     TRANSACTION_TYPES = (
         ('BUY', 'Buy'),
         ('SELL', 'Sell'),
+        ('DEP', 'Deposit'),
+        ('WIT', 'Withdraw'),
     )
 
     user = models.ForeignKey(

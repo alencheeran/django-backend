@@ -471,3 +471,206 @@ class LeaderboardView(APIView):
         # Sort by total_portfolio_value descending
         leaderboard.sort(key=lambda x: x['total_portfolio_value'], reverse=True)
         return Response(leaderboard)
+
+
+class DepositView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['amount', 'bank_name'],
+            properties={
+                'amount': openapi.Schema(type=openapi.TYPE_NUMBER, description='Amount to deposit'),
+                'bank_name': openapi.Schema(type=openapi.TYPE_STRING, description='Bank source name'),
+            },
+        )
+    )
+    def post(self, request):
+        try:
+            amount = Decimal(str(request.data.get('amount', '0')))
+        except Exception:
+            return Response({"error": "Invalid amount format"}, status=400)
+            
+        bank_name = request.data.get('bank_name', 'Bank BCA')
+
+        if amount <= 0:
+            return Response({"error": "Deposit amount must be greater than zero"}, status=400)
+
+        user = request.user
+        user.balance += amount
+        user.save()
+
+        # Create deposit transaction record
+        transaction = Transaction.objects.create(
+            user=user,
+            stock_symbol='CASH',
+            transaction_type='DEP',
+            quantity=1,
+            price=amount,
+            total_value=amount,
+            status='COMPLETED'
+        )
+
+        return Response({
+            "message": f"Successfully deposited {amount} via {bank_name}",
+            "new_balance": float(user.balance),
+            "transaction_id": transaction.id
+        })
+
+
+class WithdrawView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['amount', 'bank_name'],
+            properties={
+                'amount': openapi.Schema(type=openapi.TYPE_NUMBER, description='Amount to withdraw'),
+                'bank_name': openapi.Schema(type=openapi.TYPE_STRING, description='Bank destination name'),
+            },
+        )
+    )
+    def post(self, request):
+        try:
+            amount = Decimal(str(request.data.get('amount', '0')))
+        except Exception:
+            return Response({"error": "Invalid amount format"}, status=400)
+            
+        bank_name = request.data.get('bank_name', 'Bank BCA')
+
+        if amount <= 0:
+            return Response({"error": "Withdrawal amount must be greater than zero"}, status=400)
+
+        user = request.user
+        if user.balance < amount:
+            return Response({"error": "Insufficient balance for withdrawal"}, status=400)
+
+        user.balance -= amount
+        user.save()
+
+        # Create withdraw transaction record
+        transaction = Transaction.objects.create(
+            user=user,
+            stock_symbol='CASH',
+            transaction_type='WIT',
+            quantity=1,
+            price=amount,
+            total_value=amount,
+            status='COMPLETED'
+        )
+
+        return Response({
+            "message": f"Successfully withdrew {amount} to {bank_name}",
+            "new_balance": float(user.balance),
+            "transaction_id": transaction.id
+        })
+
+
+class PortfolioHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from django.utils import timezone
+        import yfinance as yf
+        user = request.user
+        
+        # 1. Determine the last 5 trading dates
+        try:
+            nifty = yf.Ticker("^NSEI").history(period="10d")
+            trading_dates = [ts.date() for ts in nifty.index.tolist()][-5:]
+        except Exception:
+            trading_dates = []
+            
+        if len(trading_dates) < 5:
+            # Fallback to last 5 calendar days
+            today = timezone.localtime(timezone.now()).date()
+            from datetime import timedelta
+            trading_dates = [today - timedelta(days=i) for i in range(4, -1, -1)]
+            
+        # 2. Get all user transactions
+        all_txs = list(Transaction.objects.filter(user=user).order_by('created_at'))
+        
+        # 3. Find unique stock symbols user has ever traded (excluding CASH)
+        unique_symbols = set(tx.stock_symbol for tx in all_txs if tx.stock_symbol != 'CASH')
+        
+        # 4. Fetch historical closing prices for all these stocks for the last 10 days
+        stock_histories = {}
+        for symbol in unique_symbols:
+            try:
+                ticker_symbol = f"{symbol}.NS" if not symbol.endswith(".NS") else symbol
+                hist = yf.Ticker(ticker_symbol).history(period="10d")
+                prices = {}
+                for timestamp, row in hist.iterrows():
+                    prices[timestamp.date()] = Decimal(str(row['Close']))
+                stock_histories[symbol] = prices
+            except Exception:
+                stock_histories[symbol] = {}
+
+        def get_price_on_or_before(symbol, target_date, current_avg_price):
+            prices = stock_histories.get(symbol, {})
+            if not prices:
+                return current_avg_price
+            matching_dates = [dt for dt in prices.keys() if dt <= target_date]
+            if not matching_dates:
+                if prices:
+                    earliest_date = min(prices.keys())
+                    return prices[earliest_date]
+                return current_avg_price
+            latest_date = max(matching_dates)
+            return prices[latest_date]
+
+        # 5. Compute net worth for each target date
+        history_data = []
+        for d in trading_dates:
+            # Replay transactions until end of day d
+            txs_until_d = [tx for tx in all_txs if timezone.localtime(tx.created_at).date() <= d]
+            
+            cash = user.initial_balance
+            holdings = {}
+            avg_prices = {}
+            
+            for tx in txs_until_d:
+                symbol = tx.stock_symbol
+                tx_type = tx.transaction_type
+                qty = tx.quantity
+                price = tx.price
+                total_val = tx.total_value or (qty * price)
+                
+                if symbol == 'CASH':
+                    if tx_type == 'DEP':
+                        cash += total_val
+                    elif tx_type == 'WIT':
+                        cash -= total_val
+                else:
+                    if tx_type == 'BUY':
+                        cash -= total_val
+                        old_qty = holdings.get(symbol, 0)
+                        old_avg = avg_prices.get(symbol, Decimal('0.00'))
+                        new_qty = old_qty + qty
+                        if new_qty > 0:
+                            avg_prices[symbol] = ((old_qty * old_avg) + total_val) / new_qty
+                        holdings[symbol] = new_qty
+                    elif tx_type == 'SELL':
+                        cash += total_val
+                        old_qty = holdings.get(symbol, 0)
+                        new_qty = old_qty - qty
+                        holdings[symbol] = new_qty
+                        if new_qty <= 0:
+                            avg_prices[symbol] = Decimal('0.00')
+            
+            # Sum holdings values
+            holdings_value = Decimal('0.00')
+            for symbol, qty in holdings.items():
+                if qty > 0:
+                    price_at_d = get_price_on_or_before(symbol, d, avg_prices.get(symbol, Decimal('0.00')))
+                    holdings_value += qty * price_at_d
+                    
+            net_worth = cash + holdings_value
+            history_data.append({
+                "date": d.strftime("%Y-%m-%d"),
+                "net_worth": float(net_worth)
+            })
+            
+        return Response(history_data)

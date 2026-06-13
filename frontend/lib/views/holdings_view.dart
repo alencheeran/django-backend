@@ -27,7 +27,7 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
     final portfolio = ref.watch(portfolioProvider);
     final holdings = portfolio.holdings;
 
-    final profitColor = portfolio.totalReturn >= 0.0 ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final profitColor = portfolio.totalReturn >= 0.0 ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -38,14 +38,14 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
           Text(
             'Equity Holdings',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 4),
           const Text(
             'Your active equity portfolios and open market positions',
-            style: TextStyle(color: Color(0xFF94A3B8)),
+            style: TextStyle(color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 24),
 
@@ -86,35 +86,35 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
           // Holdings list table
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF334155)),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
                     'Active Equities Position Ledger',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
-                const Divider(color: Color(0xFF334155), height: 1),
+                Divider(color: Theme.of(context).dividerColor, height: 1),
                 if (holdings.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 64.0),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 64.0),
                     child: Center(
                       child: Column(
                         children: [
-                          Icon(Icons.work_outline, color: Color(0xFF64748B), size: 48),
-                          SizedBox(height: 16),
+                          const Icon(Icons.work_outline, color: Color(0xFF64748B), size: 48),
+                          const SizedBox(height: 16),
                           Text(
                             'No active positions owned.',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
                           ),
-                          SizedBox(height: 8),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'Visit the Trade Room to buy Nifty 50 shares.',
                             style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                           ),
@@ -127,11 +127,11 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: holdings.length,
-                    separatorBuilder: (context, index) => const Divider(color: Color(0xFF334155), height: 1),
+                    separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
                     itemBuilder: (context, index) {
                       final pos = holdings[index];
                       final isPositive = pos.profitLoss >= 0.0;
-                      final pnlColor = isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+                      final pnlColor = isPositive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error;
 
                       return ListTile(
                         onTap: () {
@@ -140,17 +140,17 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
                         },
                         title: Row(
                           children: [
-                            Text(pos.stockSymbol, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            Text(pos.stockSymbol, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF334155),
+                                color: Theme.of(context).dividerColor,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 '${pos.quantity} Shares',
-                                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                               ),
                             ),
                           ],
@@ -173,7 +173,7 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
                               children: [
                                 Text(
                                   currencyFormat.format(pos.currentValue),
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                                 ),
                                 Text(
                                   '${isPositive ? "+" : ""}${currencyFormat.format(pos.profitLoss)} (${pos.profitLossPercentage.toStringAsFixed(2)}%)',
@@ -200,9 +200,9 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +210,15 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
               Icon(icon, color: color, size: 18),
             ],
           ),
@@ -223,7 +231,7 @@ class _HoldingsViewState extends ConsumerState<HoldingsView> {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   value,
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
               if (suffix != null) ...[

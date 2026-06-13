@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:candlesticks/candlesticks.dart';
@@ -10,6 +12,7 @@ import '../providers/api_client.dart';
 import '../providers/market_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/alert_provider.dart';
 
 final activePeriodProvider = StateProvider<String>((ref) => '1mo');
 
@@ -105,7 +108,7 @@ class _TradeViewState extends ConsumerState<TradeView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Successfully executed ${_activeOrderTab == 0 ? 'Buy' : 'Sell'} order for $qty shares of ${stock.symbol}!'),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         );
         _quantityController.text = '5';
@@ -143,22 +146,19 @@ class _TradeViewState extends ConsumerState<TradeView> {
     final isWatching = market.watchlistSymbols.contains(symbol);
     final changePct = stock.changePercentage ?? 0.0;
     final isUp = changePct >= 0.0;
-    final changeColor = isUp ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final changeColor = isUp ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error;
 
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 900;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 100.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Active Stock Overview Details
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
+          size.width < 600
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -166,7 +166,7 @@ class _TradeViewState extends ConsumerState<TradeView> {
                         Text(
                           stock.symbol,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -178,15 +178,22 @@ class _TradeViewState extends ConsumerState<TradeView> {
                           ),
                           onPressed: () => ref.read(marketProvider.notifier).toggleWatchlist(stock.symbol),
                         ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications_active_outlined,
+                            color: Color(0xFFC5FF29),
+                          ),
+                          onPressed: () => _showAddAlertSheet(context, stock.symbol),
+                        ),
                       ],
                     ),
-                    Text(stock.name, style: const TextStyle(color: Color(0xFF94A3B8))),
-                    const SizedBox(height: 8),
+                    Text(stock.name, style: const TextStyle(color: Color(0xFF64748B))),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Text(
                           stock.currentPrice != null ? currencyFormat.format(stock.currentPrice) : '₹--',
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -195,13 +202,72 @@ class _TradeViewState extends ConsumerState<TradeView> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: _buildPeriodGroup(period),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                stock.symbol,
+                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: Icon(
+                                  isWatching ? Icons.star : Icons.star_border,
+                                  color: isWatching ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+                                ),
+                                onPressed: () => ref.read(marketProvider.notifier).toggleWatchlist(stock.symbol),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.notifications_active_outlined,
+                                  color: Color(0xFFC5FF29),
+                                ),
+                                onPressed: () => _showAddAlertSheet(context, stock.symbol),
+                              ),
+                            ],
+                          ),
+                          Text(stock.name, style: const TextStyle(color: Color(0xFF64748B))),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                stock.currentPrice != null ? currencyFormat.format(stock.currentPrice) : '₹--',
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                '${isUp ? "+" : ""}${(stock.change ?? 0.0).toStringAsFixed(2)} (${isUp ? "+" : ""}${changePct.toStringAsFixed(2)}%)',
+                                style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Period filters selector
+                    _buildPeriodGroup(period),
                   ],
                 ),
-              ),
-              // Period filters selector
-              _buildPeriodGroup(period),
-            ],
-          ),
           const SizedBox(height: 24),
 
           // Platform layout split
@@ -213,7 +279,7 @@ class _TradeViewState extends ConsumerState<TradeView> {
                   flex: 2,
                   child: Column(
                     children: [
-                      _buildChartCard(symbol),
+                      _buildChartCard(symbol, stock),
                       const SizedBox(height: 16),
                       _buildStatsRow(stock),
                     ],
@@ -229,7 +295,7 @@ class _TradeViewState extends ConsumerState<TradeView> {
           else
             Column(
               children: [
-                _buildChartCard(symbol),
+                _buildChartCard(symbol, stock),
                 const SizedBox(height: 16),
                 _buildStatsRow(stock),
                 const SizedBox(height: 24),
@@ -248,11 +314,11 @@ class _TradeViewState extends ConsumerState<TradeView> {
       onPressed: (index) {
         ref.read(activePeriodProvider.notifier).state = periods[index];
       },
-      color: const Color(0xFF94A3B8),
+      color: const Color(0xFF64748B),
       selectedColor: Colors.white,
-      fillColor: const Color(0xFF6366F1),
-      borderColor: const Color(0xFF334155),
-      selectedBorderColor: const Color(0xFF6366F1),
+      fillColor: Theme.of(context).colorScheme.primary,
+      borderColor: Theme.of(context).dividerColor,
+      selectedBorderColor: Theme.of(context).colorScheme.primary,
       borderRadius: BorderRadius.circular(8),
       children: periods.map((p) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -261,27 +327,43 @@ class _TradeViewState extends ConsumerState<TradeView> {
     );
   }
 
-  Widget _buildChartCard(String symbol) {
+  Widget _buildChartCard(String symbol, StockModel stock) {
     final chartFuture = ref.watch(chartCandlesProvider(symbol));
 
     return Container(
       height: 400,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: chartFuture.when(
         data: (candles) {
           if (candles.isEmpty) {
-            return const Center(child: Text('No candle history available.', style: TextStyle(color: Colors.white70)));
+            return Center(child: Text('No candle history available.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))));
           }
+
+          List<Candle> chartCandles = candles;
+          if (candles.isNotEmpty && stock.currentPrice != null) {
+            final newest = candles.first;
+            final livePrice = stock.currentPrice!;
+            chartCandles = List<Candle>.from(candles);
+            chartCandles[0] = Candle(
+              date: newest.date,
+              open: newest.open,
+              close: livePrice,
+              high: math.max(newest.high, livePrice),
+              low: math.min(newest.low, livePrice),
+              volume: newest.volume,
+            );
+          }
+
           return Candlesticks(
-            candles: candles,
+            candles: chartCandles,
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1))),
+        loading: () => Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)),
         error: (err, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -291,7 +373,7 @@ class _TradeViewState extends ConsumerState<TradeView> {
               Text(
                 err.toString().replaceAll('Exception:', ''),
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
               ),
             ],
           ),
@@ -304,9 +386,9 @@ class _TradeViewState extends ConsumerState<TradeView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -322,9 +404,9 @@ class _TradeViewState extends ConsumerState<TradeView> {
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+        Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -338,9 +420,9 @@ class _TradeViewState extends ConsumerState<TradeView> {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -355,17 +437,17 @@ class _TradeViewState extends ConsumerState<TradeView> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: _activeOrderTab == 0 ? Colors.transparent : const Color(0xFF0F172A).withOpacity(0.4),
+                      color: _activeOrderTab == 0 ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
                       border: Border(
                         bottom: BorderSide(
-                          color: _activeOrderTab == 0 ? const Color(0xFF6366F1) : Colors.transparent,
+                          color: _activeOrderTab == 0 ? Theme.of(context).colorScheme.secondary : Colors.transparent,
                           width: 3,
                         ),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'BUY ORDER',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -377,17 +459,17 @@ class _TradeViewState extends ConsumerState<TradeView> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: _activeOrderTab == 1 ? Colors.transparent : const Color(0xFF0F172A).withOpacity(0.4),
+                      color: _activeOrderTab == 1 ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
                       border: Border(
                         bottom: BorderSide(
-                          color: _activeOrderTab == 1 ? const Color(0xFFEF4444) : Colors.transparent,
+                          color: _activeOrderTab == 1 ? Theme.of(context).colorScheme.error : Colors.transparent,
                           width: 3,
                         ),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'SELL ORDER',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -404,10 +486,10 @@ class _TradeViewState extends ConsumerState<TradeView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Product Class', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                    const Text('Product Class', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
                     Text(
                       _activeOrderTab == 0 ? 'EQUITY DELIVERY BUY' : 'EQUITY DELIVERY SELL',
-                      style: TextStyle(color: _activeOrderTab == 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: _activeOrderTab == 0 ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -416,13 +498,13 @@ class _TradeViewState extends ConsumerState<TradeView> {
                 // Quantity Input
                 TextFormField(
                   controller: _quantityController,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Shares Quantity',
-                    labelStyle: TextStyle(color: Color(0xFF94A3B8)),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
-                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF6366F1))),
+                    labelStyle: const TextStyle(color: Color(0xFF64748B)),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                    focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Theme.of(context).colorScheme.primary)),
                   ),
                   onChanged: (val) => setState(() {}),
                 ),
@@ -439,25 +521,25 @@ class _TradeViewState extends ConsumerState<TradeView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Execution Rate', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+                    const Text('Execution Rate', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
                     Text(
                       price > 0 ? currencyFormat.format(price) : '₹--',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 
                 // Total calculations
-                const Divider(color: Color(0xFF334155)),
+                Divider(color: Theme.of(context).dividerColor),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(_activeOrderTab == 0 ? 'Required Capital' : 'Total Est. Proceeds', style: const TextStyle(color: Color(0xFF94A3B8))),
+                    Text(_activeOrderTab == 0 ? 'Required Capital' : 'Total Est. Proceeds', style: const TextStyle(color: Color(0xFF64748B))),
                     Text(
                       currencyFormat.format(totalCost),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ],
                 ),
@@ -478,11 +560,12 @@ class _TradeViewState extends ConsumerState<TradeView> {
                 ElevatedButton(
                   onPressed: _isExecuting || (_activeOrderTab == 0 && !hasBalance) ? null : () => _executeOrder(stock, holding.quantity),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _activeOrderTab == 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-                    disabledBackgroundColor: const Color(0xFF334155),
+                    backgroundColor: _activeOrderTab == 0 ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error,
+                    disabledBackgroundColor: Theme.of(context).dividerColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
                   ),
                   child: _isExecuting
                       ? const SizedBox(
@@ -502,6 +585,171 @@ class _TradeViewState extends ConsumerState<TradeView> {
           )
         ],
       ),
+    );
+  }
+
+  void _showAddAlertSheet(BuildContext context, String symbol) {
+    HapticFeedback.lightImpact();
+    final stock = ref.read(marketProvider).stocks.firstWhere((s) => s.symbol == symbol);
+    final currentPrice = stock.currentPrice ?? 0.0;
+    
+    final _alertPriceController = TextEditingController(text: currentPrice.toStringAsFixed(2));
+    bool _isAbove = true;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final alerts = ref.watch(alertProvider).where((a) => a.symbol == symbol).toList();
+            return Padding(
+              padding: EdgeInsets.only(
+                top: 24,
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Set Price Alert for $symbol",
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white60),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Current Live Price: ₹${currentPrice.toStringAsFixed(2)}",
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  TextField(
+                    controller: _alertPriceController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: "Target Price (₹)",
+                      labelStyle: TextStyle(color: Color(0xFF64748B)),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF334155))),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFC5FF29))),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Trigger when price goes:",
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                      Row(
+                        children: [
+                          ChoiceChip(
+                            label: const Text("Above"),
+                            selected: _isAbove,
+                            selectedColor: const Color(0xFFC5FF29),
+                            onSelected: (selected) {
+                              if (selected) {
+                                HapticFeedback.lightImpact();
+                                setSheetState(() => _isAbove = true);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: const Text("Below"),
+                            selected: !_isAbove,
+                            selectedColor: const Color(0xFFC5FF29),
+                            onSelected: (selected) {
+                              if (selected) {
+                                HapticFeedback.lightImpact();
+                                setSheetState(() => _isAbove = false);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC5FF29),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      final val = double.tryParse(_alertPriceController.text);
+                      if (val == null || val <= 0) {
+                        HapticFeedback.vibrate();
+                        return;
+                      }
+                      HapticFeedback.heavyImpact();
+                      ref.read(alertProvider.notifier).addAlert(symbol, val, _isAbove);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Price Alert set for $symbol at ₹${val.toStringAsFixed(2)}!"),
+                          backgroundColor: const Color(0xFFC5FF29),
+                        ),
+                      );
+                    },
+                    child: const Text("Create Alert", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  
+                  if (alerts.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Divider(color: Color(0xFF334155)),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "Active Alerts for this Stock",
+                      style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ...alerts.asMap().entries.map((entry) {
+                      final alert = entry.value;
+                      final actualIndex = ref.read(alertProvider).indexOf(alert);
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          "Trigger when price is ${alert.isAbove ? '≥' : '≤'} ₹${alert.targetPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(alertProvider.notifier).removeAlert(actualIndex);
+                            setSheetState(() {});
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

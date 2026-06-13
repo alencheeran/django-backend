@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (
     PortfolioView, BuyStockView, PortfolioSummaryView, PortfolioHoldingsView,
-    SellStockView, TransactionHistoryView, WatchlistView, WatchlistToggleView, LeaderboardView
+    SellStockView, TransactionHistoryView, WatchlistView, WatchlistToggleView, LeaderboardView,
+    DepositView, WithdrawView, PortfolioHistoryView
 )
 
 urlpatterns = [
@@ -14,4 +15,7 @@ urlpatterns = [
     path('watchlist/', WatchlistView.as_view()),
     path('watchlist/toggle/', WatchlistToggleView.as_view()),
     path('leaderboard/', LeaderboardView.as_view()),
+    path('deposit/', DepositView.as_view()),
+    path('withdraw/', WithdrawView.as_view(), name='portfolio-withdraw'),
+    path('history/', PortfolioHistoryView.as_view(), name='portfolio-history'),
 ]
